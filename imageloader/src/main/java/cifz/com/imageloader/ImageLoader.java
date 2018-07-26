@@ -20,10 +20,41 @@ public class ImageLoader {
     //线程池 线程数量为CPU数量
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
+    private int defaultImage;
+
     private ImageCache imageCache;
 
-    public void setImageCache(ImageCache imageCache) {
-        this.imageCache = imageCache;
+    private int threadCount;
+
+    private static ImageLoader imageLoader = null;
+
+    private ImageloaderConfig config;
+
+    private ImageLoader() {
+
+    }
+
+    public static ImageLoader getInstance(){
+        if(imageLoader == null){
+            synchronized (ImageLoader.class){
+                if(imageLoader == null){
+                    imageLoader = new ImageLoader();
+                }
+            }
+        }
+        return imageLoader;
+    }
+
+    public void init(ImageloaderConfig config){
+        this.config = config;
+        imageCache = config.imageCache;
+        defaultImage = config.defaultImage;
+        threadCount = config.threadCount;
+
+        mExecutorService.shutdown();
+        mExecutorService = null;
+        mExecutorService = Executors.newFixedThreadPool(threadCount);
+
     }
 
     public void displayImage(final String url, final ImageView imageView){
@@ -32,6 +63,7 @@ public class ImageLoader {
             imageView.setImageBitmap(bitmap);
             return;
         }
+        imageView.setImageResource(defaultImage);
         imageView.setTag(url);
         mExecutorService.submit(new Runnable() {
             @Override
@@ -47,7 +79,7 @@ public class ImageLoader {
             }
         });
     }
-    
+
     public void displayImage(int image,ImageView imageView){
         imageView.setBackgroundResource(image);
     }
